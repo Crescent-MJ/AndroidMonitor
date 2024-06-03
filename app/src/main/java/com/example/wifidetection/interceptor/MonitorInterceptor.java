@@ -5,8 +5,10 @@ import static com.example.wifidetection.detectionHelper.context;
 import static com.example.wifidetection.detectionHelper.isWhiteContentType;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.net.Uri;
+import android.net.wifi.WifiManager;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -14,12 +16,14 @@ import androidx.annotation.NonNull;
 import com.example.wifidetection.data.detectionData;
 import com.example.wifidetection.detectionHelper;
 
+import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
 
 import okhttp3.Protocol;
 import okhttp3.ResponseBody;
 
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -39,6 +43,9 @@ import okio.GzipSource;
 public class MonitorInterceptor implements Interceptor {
     private static final String TAG = "MonitorInterceptor";
     private static long maxContentLength = 1024 * 1024;
+    private static final int PING_INTERVAL = 1000; // 每秒ping一次
+    private static final int PING_DURATION = 10000; // 10秒内的波动检测
+    private static final int PING_THRESHOLD = 100; // 100ms的波动阈值
 
     @NonNull
     @Override
@@ -59,6 +66,17 @@ public class MonitorInterceptor implements Interceptor {
             monitorData.setHost(uri.getHost());
             monitorData.setPath(uri.getPath() + (uri.getQuery() != null ? "?" + uri.getQuery() : ""));
             monitorData.setScheme(uri.getScheme());
+
+            // Ping值波动检测
+            if (isPingFluctuationTooHigh(uri.getHost())) {
+                showBlacklistAlert();
+                return new Response.Builder()
+                        .code(400)
+                        .message("High Ping Fluctuation")
+                        .protocol(Protocol.HTTP_1_1)
+                        .request(request)
+                        .build();
+            }
         }
 
         if (!monitorData.isWhiteHosts()) {
@@ -177,6 +195,52 @@ public class MonitorInterceptor implements Interceptor {
         }
     }
 
+    private boolean isPingFluctuationTooHigh(String host) {
+        // 模拟Ping操作并检查波动情况
+        long[] pings = new long[PING_DURATION / PING_INTERVAL];
+        for (int i = 0; i < pings.length; i++) {
+            pings[i] = getPing(host);
+            try {
+                Thread.sleep(PING_INTERVAL);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        long minPing = Long.MAX_VALUE;
+        long maxPing = Long.MIN_VALUE;
+        for (long ping : pings) {
+            if (ping < minPing) minPing = ping;
+            if (ping > maxPing) maxPing = ping;
+        }
+
+        return (maxPing - minPing) > PING_THRESHOLD;
+    }
+
+    private long getPing(String host) {
+        // 模拟获取Ping值的逻辑
+        // 具体实现根据实际情况编写
+        try {
+            Process process = Runtime.getRuntime().exec("/system/bin/ping -c 1 " + host);
+            int status = process.waitFor();
+            if (status == 0) {
+                // 解析ping命令的输出获取时间
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String output;
+                while ((output = bufferedReader.readLine()) != null) {
+                    if (output.contains("time=")) {
+                        int index = output.indexOf("time=");
+                        String time = output.substring(index + 5, output.indexOf("ms", index)).trim();
+                        return Long.parseLong(time);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return Long.MAX_VALUE;
+    }
+
     private void insert(detectionData monitorData) {
         detectionHelper.insert(monitorData);
     }
@@ -221,11 +285,18 @@ public class MonitorInterceptor implements Interceptor {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 // 用户点击确定时执行的操作，可以在此处添加断开WiFi连接的逻辑
-                // 请替换为断开WiFi连接的方法
+                disconnectFromCurrentWifi();
             }
         });
         builder.setNegativeButton("取消/Cancel", null);
         builder.show();
+    }
+    private void disconnectFromCurrentWifi() {
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        if (wifiManager != null) {
+            // 禁用当前WiFi
+            wifiManager.disconnect();
+        }
     }
 
 }

@@ -99,20 +99,4 @@ public abstract class detectionService {
         }
         detectionHelper.updateSpValue(context, fileName, key, realValue);
     }
-    /*
-    @Get("setWeakNetConfig")
-    public void configWeak(String weakType) {
-        WeakNetworkHelper.configWeak(weakType);
-    }
-
-    @Get("setMockConfig")
-    public void setMockConfig(String mockBaseUrl, String mockPath, String mockResponse) {
-        MockHelper.configMock(mockBaseUrl, mockPath, mockResponse);
-    }
-
-    @Get("openMockService")
-    public void openMockService(boolean isOpen) {
-        MockHelper.isOpen = isOpen;
-    }
-     */
 }

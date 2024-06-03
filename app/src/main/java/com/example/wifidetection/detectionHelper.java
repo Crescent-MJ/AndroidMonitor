@@ -108,20 +108,6 @@ public class detectionHelper {
         Objects.requireNonNull(getMonitorDataDao()).insert(detectionData);
     }
 
-    /*
-    private void initPCService(Context context, int port) {
-        ALSHelper ALSHelper;
-        ALSHelper = null;
-        ALSHelper.init(context);
-        if (port > 0) {
-            ALSHelper.startService(new ServiceConfig(detectionService.class, port));
-        } else {
-            ALSHelper.startService(new ServiceConfig(detectionService.class));
-        }
-        detectionHelper.port = ALSHelper.getServiceList().stream().findFirst().map(ServiceConfig::getPort).orElse(0);
-    }
-
-     */
     private void initPCService(Context context, int port) {
         ALSHelper ALSHelper;
         ALSHelper = null;
