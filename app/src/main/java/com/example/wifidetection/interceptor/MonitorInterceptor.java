@@ -13,6 +13,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.example.wifidetection.Methods.DatabaseManager;
+import com.example.wifidetection.data.HttpHeader;
 import com.example.wifidetection.data.detectionData;
 import com.example.wifidetection.detectionHelper;
 
@@ -28,6 +30,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Headers;
@@ -42,10 +45,17 @@ import okio.GzipSource;
 
 public class MonitorInterceptor implements Interceptor {
     private static final String TAG = "MonitorInterceptor";
+    private final DatabaseManager databaseManager;
     private static long maxContentLength = 1024 * 1024;
     private static final int PING_INTERVAL = 1000; // 每秒ping一次
     private static final int PING_DURATION = 10000; // 10秒内的波动检测
     private static final int PING_THRESHOLD = 100; // 100ms的波动阈值
+
+    public MonitorInterceptor() {
+        // 初始化数据库管理器
+        databaseManager = new DatabaseManager(context);
+    }
+
 
     @NonNull
     @Override
@@ -77,6 +87,13 @@ public class MonitorInterceptor implements Interceptor {
                         .request(request)
                         .build();
             }
+        }
+
+        // 检查请求的HTTP头是否与数据库中的记录匹配
+        if (!checkHeadersWithDatabase(request.headers())) {
+            // 处理不一致的情况，例如记录日志或显示警告
+            Log.e(TAG, "Request headers do not match database records!");
+            // 这里你可以选择抛出异常
         }
 
         if (!monitorData.isWhiteHosts()) {
@@ -187,12 +204,39 @@ public class MonitorInterceptor implements Interceptor {
                 monitorData.setResponseContentLength(buffer.size());
             }
 
+            // 检查响应的HTTP头是否与数据库中的记录匹配
+            if (!checkHeadersWithDatabase(response.headers())) {
+                // 处理不一致的情况，例如记录日志或显示警告
+                Log.e(TAG, "Response headers do not match database records!");
+                // 这里你可以选择抛出异常
+            }
+
             insert(monitorData);
             return response;
         } catch (Exception e) {
             Log.d("MonitorHelper", e.getMessage() != null ? e.getMessage() : "");
             return response;
         }
+    }
+
+    private boolean checkHeadersWithDatabase(Headers headers) {
+        // 查询数据库获取存储的HTTP头信息
+        List<HttpHeader> storedHeaders = databaseManager.getAllHeaders();
+
+        // 遍历数据库中的HTTP头记录，与提供的HTTP头进行比较
+        for (HttpHeader storedHeader : storedHeaders) {
+            String storedName = storedHeader.getName();
+            String storedValue = storedHeader.getValue();
+            String providedValue = headers.get(storedName);
+
+            // 检查提供的值是否与数据库中存储的值匹配
+            if (providedValue == null || !providedValue.equals(storedValue)) {
+                return false; // 发现不一致，返回false
+            }
+        }
+
+        // 如果所有头都匹配，则返回true
+        return true;
     }
 
     private boolean isPingFluctuationTooHigh(String host) {
