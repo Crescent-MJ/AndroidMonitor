@@ -117,7 +117,7 @@ public class MonitorInterceptor implements Interceptor {
         }
 
         RequestBody requestBody = request.body();
-        monitorData.setRequestTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        monitorData.setRequestTime(new SimpleDateFormat("dd-MM-YYYY HH:mm:ss.SSS").format(new Date()));
 
         if (requestBody != null && requestBody.contentType() != null) {
             monitorData.setRequestContentType(requestBody.contentType().toString());
@@ -142,7 +142,7 @@ public class MonitorInterceptor implements Interceptor {
                 return response;
             }
 
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-YYYY HH:mm:ss.SSS");
             String formattedDate = dateFormat.format(new Date());
             monitorData.setResponseTime(formattedDate);
             monitorData.setDuration(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
