@@ -121,10 +121,10 @@ Special thanks to supervisor Mehran Abolhasan for guidance and support.
 
 ---
 
-## Contact
+## Appendices
 
-- Author: Mengjing Cao
-- Email: caomj0311_nj@sina.com
+- Code Help from GitHub: https://github.com/lygttpod/AndroidMonitor 
+- Android theory knowledge help: https://developer.android.com/
 
 ---
 
