@@ -57,6 +57,7 @@ With the widespread adoption of mobile devices and public Wi-Fi, users are incre
 ├── monitor/               # (Optional) Additional modules or monitoring logic
 ├── .gitignore             # Git ignore rules
 ├── README.md              # Project documentation (this file)
+├── README-zh.md           # Project documentation - Chinese Version
 ├── build.gradle.kts       # Project-level Gradle build script (Kotlin DSL)
 ├── gradle.properties      # Gradle properties configuration
 ├── gradlew                # Unix Gradle wrapper
