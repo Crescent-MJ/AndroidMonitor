@@ -127,5 +127,3 @@ Special thanks to supervisor Mehran Abolhasan for guidance and support.
 - Android theory knowledge help: https://developer.android.com/
 
 ---
-
-**For Chinese version of this README, please see [README-zh.md](README-zh.md).**
